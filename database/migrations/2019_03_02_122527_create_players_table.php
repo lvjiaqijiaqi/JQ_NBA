@@ -20,7 +20,7 @@ class CreatePlayersTable extends Migration
             $table->string('player_name');
             $table->string('player_en_name');
             $table->string('player_image')->default("");
-            $table->string('player_psition')->default("");
+            $table->string('player_position')->default("");
             $table->integer('player_position_id')->default(0);
             $table->integer('player_match_num')->default(0);
             $table->float('player_per_time')->default(0);
