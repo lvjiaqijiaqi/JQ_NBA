@@ -43,6 +43,11 @@ class NbaUpdateSalary extends Command
      */
     public function handle()
     {
+        $t = RealTimeData::find(1);
+        $player = $t->player;
+        $this->info("playerName = $player->player_name",$player->player_name);
+        return;
+
         foreach (Player::cursor() as $player) {
             $positionNameStr = $player->player_position;
             $positionNameArr = explode("-",$positionNameStr);

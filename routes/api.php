@@ -13,6 +13,18 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+$api = app('Dingo\Api\Routing\Router');
+
+$api->version('v1', [
+    'namespace' => 'App\Http\Controllers\Api'
+] , function($api) {
+    $api->get('socials/{social_type}/authorizations', function() {
+        return response('this is version v1');
+    });
+    $api->get('players', 'GameController@index')
+    ->name('api.game.index');
+
+    $api->post('socials/{social_type}/authorizations', 'AuthorizationsController@socialStore')
+    ->name('api.socials.authorizations.store');
+
 });

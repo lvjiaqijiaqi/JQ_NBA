@@ -44,6 +44,7 @@ class NbaRequireRealTimeData extends Command
     public function handle()
     {
         $matchs = $this->getMatches(Carbon::now()->toDateString());
+        //$this->info("need update matchId = $matchs" , $matchs);
         foreach ($matchs as $matchId) {
              $this->info("start matchId = $matchId" , $matchId);
              $this->getRealData($matchId);
@@ -53,6 +54,7 @@ class NbaRequireRealTimeData extends Command
     }
 
     public function getMatches($date){
+        $this->info("getMatchs date = $date" , $date);
         $client = new Client([
         // Base URI is used with relative requests
         'base_uri' => 'http://sportsnba.qq.com',
@@ -75,20 +77,27 @@ class NbaRequireRealTimeData extends Command
         $res = [];
         foreach ($matches as $match) {
             $match = $match["matchInfo"];
-            $t = Match::updateOrCreate(['match_id' => $match["mid"]],[
-                'match_date' => $date,
-                'match_id' => $match["mid"],
-                'match_team_id1' => $match["leftId"],
-                'match_team_name1' => $match["leftName"],
-                'match_team_score1' => $match["leftGoal"],
-                'match_team_id2' => $match["rightId"],
-                'match_team_name2' => $match["rightName"],
-                'match_team_score2' => $match["rightGoal"],
-                'match_period' => $match["matchPeriod"],
-                'match_start_time' => $match["startTime"],
-                'match_end_time' => $match["endTime"],
-            ]);
-            $res[] = $match["mid"];
+            $t = Match::where('match_id' , $match["mid"])->first();
+            if ($t) {
+                if ($match["mid"] != 0) {
+                    $res[] = $match["mid"];
+                }
+            }else{
+                $t = Match::updateOrCreate(['match_id' => $match["mid"]],[
+                    'match_date' => $date,
+                    'match_id' => $match["mid"],
+                    'match_team_id1' => $match["leftId"],
+                    'match_team_name1' => $match["leftName"],
+                    'match_team_score1' => $match["leftGoal"],
+                    'match_team_id2' => $match["rightId"],
+                    'match_team_name2' => $match["rightName"],
+                    'match_team_score2' => $match["rightGoal"],
+                    'match_period' => $match["matchPeriod"],
+                    'match_start_time' => $match["startTime"],
+                    'match_end_time' => $match["endTime"],
+                ]);
+                $res[] = $match["mid"];
+            }
         }
         return $res;
     }
@@ -124,15 +133,25 @@ class NbaRequireRealTimeData extends Command
             }
         }
         foreach ($playerDetail as $detail) {
+            if($detail["playerId"] > 0){
                 $t = RealTimeData::updateOrCreate(['player_id' => $detail["playerId"]],[
-                'player_name' => $detail["row"][0],
-                'point' => $detail["row"][2],
-                'rebound' => $detail["row"][3],
-                'assist' => $detail["row"][4],
-                'steal' => $detail["row"][5],
-                'block' => $detail["row"][6],
-                'turnover' => $detail["row"][15],
-            ]);
+                    'player_name' => $detail["row"][0],
+                    'point' => $detail["row"][2],
+                    'rebound' => $detail["row"][3],
+                    'assist' => $detail["row"][4],
+                    'steal' => $detail["row"][5],
+                    'block' => $detail["row"][6],
+                    'turnover' => $detail["row"][15],
+                ]);
+                $player = $t->player;
+                if ($player) {
+                    $t->position_id = $player->player_position_id;
+                    $t->salary = $player->player_per_score;
+                    $t->save();
+                }else{
+                    $this->info("find error : playerId = $t->player_id" , $t->player_id);
+                }
+            }
         }
     }
 }
